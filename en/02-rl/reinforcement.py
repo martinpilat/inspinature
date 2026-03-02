@@ -52,17 +52,17 @@ if __name__ == '__main__':
     print('truncated:', truncated)
     print('info:', info)
 
-    #import solution  # this class will be provided later, once you try implementing the agent yourself
+    # import solution  # this class will be provided later, once you try implementing the agent yourself
 
-    #agent = solution.QLearningAgent(env.action_space, solution.StateDiscretizer(
-    #    list(zip(env.observation_space.low, env.observation_space.high)), [15, 15]), True)
+    # agent = solution.QLearningAgent(env.action_space, solution.StateDiscretizer(
+        # list(zip(env.observation_space.low, env.observation_space.high)), [15, 15]), True)
 
     agent = RandomAgent(env.action_space)
 
     # We will need a lot of iterations to train the agent, we can use a technique similar to the one below.
 
     total_rewards = []
-    for i in range(1000):  # 5000 runs in the environments
+    for i in range(5000):  # 5000 runs in the environments
         obs, info = env.reset()
         agent.reset()
 
@@ -83,16 +83,19 @@ if __name__ == '__main__':
 
     agent.train = False
     import matplotlib.pyplot as plt
+    
+    try: 
+        plt.imshow(agent.Q.max(axis=1).reshape(15, 15))
+        plt.show()
 
-    plt.imshow(agent.Q.max(axis=1).reshape(15, 15))
-    plt.show()
+        env = gym.make('MountainCar-v0', render_mode='human')
 
-    env = gym.make('MountainCar-v0', render_mode='human')
+        utils.show_animation(agent, env, steps=1000, episodes=5)
 
-    utils.show_animation(agent, env, steps=1000, episodes=5)
-
-    # display the learning progress - show() ensures that the window will stay open until we close it
-    plt.plot(utils.moving_average(total_rewards, 10))
-    plt.show()
+        # display the learning progress - show() ensures that the window will stay open until we close it
+        plt.plot(utils.moving_average(total_rewards, 10))
+        plt.show()
+    except:
+        pass
 
     env.close()
