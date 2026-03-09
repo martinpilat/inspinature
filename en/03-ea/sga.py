@@ -1,74 +1,101 @@
 import random
+import copy
 
+DIM = 25
 POP_SIZE = 50
-IND_LEN = 100
-CX_PROB = 0.8
-MUT_PROB = 0.2
-MUT_PPB = 1/IND_LEN
+MAX_GEN = 500
+CROSS_P = 0.8
+MUT_P = 0.2
+FLIP_P = 1/DIM
 
-def random_individual():
-    return [random.randint(0, 1) for _ in range(IND_LEN)]
+PATTERN = [0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1]
 
-def random_initial_population():
-    return [random_individual() for _ in range(POP_SIZE)]
+def random_individual(dim):
+    return [random.randint(0,1) for _ in range(dim)]
 
-def fitness(ind):
+def random_population(pop_size, dim):
+    return [random_individual(dim) for _ in range(pop_size)]
+
+def one_max_fitness(ind):
+    # return sum(1 if i == p else 0 for (i, p) in zip(ind, PATTERN))
     return sum(ind)
 
-def select(pop, fit):
-    return random.choices(pop, fit, k=POP_SIZE)
+def select(pop, how_many, fits):
+    sel = random.choices(pop, weights=fits, k=how_many)
+    return copy.deepcopy(sel)
 
-def cross(p1, p2):
-    point = random.randrange(0, len(p1))
-    if random.random() < CX_PROB:
-        return p1[:point] + p2[point:], p2[:point] + p1[point:]
-    return p1[:], p2[:]
+def crossover(pool, cross_p):
+    dim = len(pool[0])
+    off = []
+    for p1, p2 in zip(pool[::2], pool[1::2]):
+        if random.random() < cross_p:
+            point = random.randrange(0, dim)
+            o1 = p1[:point] + p2[point:]
+            o2 = p2[:point] + p1[point:]
+        else:
+            o1, o2 = p1, p2
+        off += [o1, o2]
+    return off
 
-def crossover(pop):
-    o = []
-    for p1, p2 in zip(pop[::2], pop[1::2]):
-        o1, o2 = cross(p1, p2)
-        o.append(o1)
-        o.append(o2)
-    return o
+def mutation(pool, mut_p, flip_p):
+    off = []
+    for p in pool:
+        if random.random() < mut_p:
+            o = []
+            for v in p:
+                if random.random() < flip_p:
+                    o.append(1-v)
+                else:
+                    o.append(v)
+            off.append(o)
+        else:
+            off.append(p)
+    return off
 
-def mutate(p):
-    if random.random() < MUT_PROB:
-        return [1 - v if random.random() < MUT_PPB else v for v in p]
-    return p[:]
-
-def mutation(pop):
-    return [mutate(p) for p in pop]
-
-def evolution(pop):
+def evolution(pop, dim, fitness, 
+              max_gen, cross_p, mut_p, flip_p):
+    pop_size = len(pop)
     log = []
-    for G in range(1000):
-        fit = [fitness(ind)[0] for ind in pop]
-        obj = [fitness(ind)[1] for ind in pop]
-        log.append(min(obj))
-        m = select(pop, fit)
-        o = crossover(m)
-        o = mutation(o)
-        pop = o[:]
-
+    for g in range(max_gen):
+        # logging
+        fits = [fitness(ind) for ind in pop]
+        log.append(max(fits))
+        
+        # elitism
+        best = max(pop, key=fitness)
+        
+        mating_pool = select(pop, pop_size, fits)
+        pre_off = crossover(mating_pool, cross_p)
+        off = mutation(pre_off, mut_p, flip_p)
+        
+        off[0] = copy.deepcopy(best) # elitism
+        pop = off
     return pop, log
 
-input_set = [random.randrange(0,50) + 100 for _ in range(100)] # 100 random numbers between 100 and 150
-number = 3*sum(input_set)//5
+from pprint import pprint
 
-def fitness(ind):
-    subset_sum = sum([ind_i*is_i for ind_i, is_i in zip(ind, input_set)])
-    return 1/(1 + abs(subset_sum - number)), abs(subset_sum - number)
+SET = [random.randint(0, 500) for _ in range(100)]
+K = sum(SET)//3
 
-import pprint
-# print(random_individual())
-pop = random_initial_population()
-# pprint.pprint([(fitness(ind), ind) for ind in pop])
-pop, log = evolution(pop)
-# pprint.pprint([(fitness(ind), ind) for ind in pop])
-# print(number)
-# print(input_set)
-#pprint.pprint(log)
-import matplotlib.pyplot as plt
+pop = random_population(POP_SIZE, DIM)
+print('After init')
+pprint(pop)
+res, log = evolution(pop, DIM, one_max_fitness, MAX_GEN, CROSS_P, MUT_P, FLIP_P)
+print('After evolution')
+pprint(res)
+print(log)
+
+import matplotlib.pyplot as plt 
+
 plt.plot(log)
 plt.show()
+
+# print('Before crossover')
+# pprint(pop)
+# print('After crossover')
+# cross = crossover(pop, 1.0)
+# pprint(cross)
+# print('After mutation')
+# mut = mutation(cross, 1.0, 0.5)
+# pprint(mut)
+
