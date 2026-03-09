@@ -1,3 +1,4 @@
+from os import wait
 import random
 import copy
 
@@ -59,7 +60,7 @@ def evolution(pop, dim, fitness,
     for g in range(max_gen):
         # logging
         fits = [fitness(ind) for ind in pop]
-        log.append(max(fits))
+        log.append(1/max(fits))
         
         # elitism
         best = max(pop, key=fitness)
@@ -75,19 +76,40 @@ def evolution(pop, dim, fitness,
 from pprint import pprint
 
 SET = [random.randint(0, 500) for _ in range(100)]
+DIM = len(SET)
+print(sum(SET))
 K = sum(SET)//3
+
+def subset_fitness(ind):
+    s = sum(i*s for (i, s) in zip(ind, SET))
+    if K == s:
+        return 2
+    diff = 1/abs(K-s)
+    return diff
 
 pop = random_population(POP_SIZE, DIM)
 print('After init')
 pprint(pop)
-res, log = evolution(pop, DIM, one_max_fitness, MAX_GEN, CROSS_P, MUT_P, FLIP_P)
+res, log = evolution(pop, DIM, subset_fitness, MAX_GEN, CROSS_P, MUT_P, FLIP_P)
 print('After evolution')
 pprint(res)
 print(log)
 
 import matplotlib.pyplot as plt 
 
-plt.plot(log)
+logs = []
+for _ in range(10):
+    pop = random_population(POP_SIZE, DIM)
+    res, log = evolution(pop, DIM, subset_fitness, MAX_GEN, CROSS_P, MUT_P, FLIP_P)
+    logs.append(log)
+
+import numpy as np
+
+logs = np.array(logs)
+
+plt.plot(logs.mean(axis=0))
+plt.fill_between(list(range(len(logs[0]))), np.percentile(logs, axis=0, q=25), np.percentile(logs, axis=0, q=75), alpha=0.5)
+plt.yscale('log')
 plt.show()
 
 # print('Before crossover')
