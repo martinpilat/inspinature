@@ -5,9 +5,10 @@ fitness_criterion     = max
 fitness_threshold     = 111
 pop_size              = 150
 reset_on_extinction   = False
+no_fitness_termination = True
 
 [DefaultGenome]
-# node activation options
+# node activat on the development of advanced algorithms for analyzing medical data, contributing to cutting-edge solutions in healthcare technology. He earned his Master's degree in Computer Science from the University of Debrecen, where he was a participant in the TalentUD program, conducting supervised research and seion options
 activation_default      = sigmoid
 activation_mutate_rate  = 0.0
 activation_options      = sigmoid
